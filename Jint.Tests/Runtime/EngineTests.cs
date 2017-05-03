@@ -468,7 +468,7 @@ namespace Jint.Tests.Runtime
         {
             RunTest(@"
                 for(var i in 'abc');
-				log(i);
+                log(i);
                 assert(i === '2');
             ");
         }
@@ -1862,15 +1862,15 @@ namespace Jint.Tests.Runtime
         public void GlobalRegexLiteralShouldNotKeepState()
         {
             RunTest(@"
-				var url = 'https://www.example.com';
+                var url = 'https://www.example.com';
 
-				assert(isAbsolutePath(url));
-				assert(isAbsolutePath(url));
-				assert(isAbsolutePath(url));
+                assert(isAbsolutePath(url));
+                assert(isAbsolutePath(url));
+                assert(isAbsolutePath(url));
 
-				function isAbsolutePath(path) {
-					return /\.+/g.test(path);
-				}
+                function isAbsolutePath(path) {
+                    return /\.+/g.test(path);
+                }
             ");
         }
 
@@ -1900,6 +1900,26 @@ namespace Jint.Tests.Runtime
             Native.JsValue val = engine.Execute("JSON.stringify(53.6841659)").GetCompletionValue();
 
             Assert.True(val.AsString() == "53.6841659");
+        }
+
+        [Theory]
+        [InlineData("", "escape('')")]
+        [InlineData("%u0100%u0101%u0102", "escape('\u0100\u0101\u0102')")]
+        [InlineData("%uFFFD%uFFFE%uFFFF", "escape('\ufffd\ufffe\uffff')")]
+        [InlineData("%uD834%uDF06", "escape('\ud834\udf06')")]
+        [InlineData("%00%01%02%03", "escape('\x00\x01\x02\x03')")]
+        [InlineData("%2C", "escape(',')")]
+        [InlineData("%3A%3B%3C%3D%3E%3F", "escape(':;<=>?')")]
+        [InlineData("%60", "escape('`')")]
+        [InlineData("%7B%7C%7D%7E%7F%80", "escape('{|}~\x7f\x80')")]
+        [InlineData("%FD%FE%FF", "escape('\xfd\xfe\xff')")]
+        [InlineData("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@*_+-./", "escape('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@*_+-./')")]
+        public void ShouldEvaluateEscape(object expected, string source)
+        {
+            var engine = new Engine();
+            var result = engine.Execute(source).GetCompletionValue().ToObject();
+
+            Assert.Equal(expected, result);
         }
     }
 }
